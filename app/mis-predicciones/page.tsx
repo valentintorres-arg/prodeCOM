@@ -1,7 +1,6 @@
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatARDateTimeShort } from "@/lib/dateUtils";
 import Image from "next/image";
 import { Target } from "lucide-react";
 import Link from "next/link";
@@ -72,7 +71,7 @@ export default async function MisPrediccionesPage() {
               <div className="hidden sm:block w-28 flex-shrink-0">
                 <div className="text-xs text-white/40">{match.stage}</div>
                 <div className="text-xs text-white/60 mt-0.5">
-                  {format(match.matchDate, "d MMM HH:mm", { locale: es })}
+                  {formatARDateTimeShort(match.matchDate.toISOString())}
                 </div>
               </div>
 

@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getSessionUser } from "@/lib/auth";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatARDateTimeShort } from "@/lib/dateUtils";
 import Image from "next/image";
 import { History } from "lucide-react";
 import type { Match, Team } from "@/types";
@@ -109,7 +108,7 @@ export default async function HistorialPage() {
                     <div key={match.id} className="card flex items-center gap-3 py-3">
                       {/* Date */}
                       <div className="hidden sm:block text-xs text-white/30 w-20 flex-shrink-0 text-right">
-                        {format(new Date(match.matchDate), "d MMM", { locale: es })}
+                        {formatARDateTimeShort(match.matchDate)}
                       </div>
 
                       {/* Home team */}

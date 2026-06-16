@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatARDateTime } from "@/lib/dateUtils";
 import type { Match, Team } from "@/types";
 import { Plus, RefreshCw, Save, Trash2, AlertCircle, History, GitBranch } from "lucide-react";
 
@@ -49,11 +49,13 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
   async function handleCreateMatch(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
+    // Append Argentina UTC offset so the server stores the correct UTC time
+    const matchDateAR = matchDate ? `${matchDate}-03:00` : matchDate;
     const res = await fetch("/api/admin/matches", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        homeTeamId, awayTeamId, matchDate, stage, venue,
+        homeTeamId, awayTeamId, matchDate: matchDateAR, stage, venue,
         alreadyPlayed,
         homeScore: alreadyPlayed ? createHomeScore : undefined,
         awayScore: alreadyPlayed ? createAwayScore : undefined,
@@ -184,7 +186,7 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-white/50 mb-1">Fecha y hora</label>
+                <label className="block text-xs text-white/50 mb-1">Fecha y hora (Bs. As.)</label>
                 <input type="datetime-local" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} required className="input-field text-sm" />
               </div>
               <div>
@@ -259,7 +261,7 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
                 </div>
 
                 <div className="text-xs text-white/40 hidden sm:block flex-shrink-0">
-                  {format(new Date(match.matchDate), "d/M HH:mm")}
+                  {formatARDateTime(match.matchDate)}
                 </div>
 
                 <div className="flex-shrink-0">

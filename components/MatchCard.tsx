@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { format } from "date-fns";
+import { formatARTime } from "@/lib/dateUtils";
 import type { Match, Prediction } from "@/types";
 import { Clock, MapPin } from "lucide-react";
 
@@ -73,7 +73,7 @@ export default function MatchCard({ match, prediction, userId, canPredict }: Pro
           {!isLive && !isFinished && (
             <span className="flex items-center gap-1 text-xs text-white/40">
               <Clock className="w-3 h-3" />
-              {format(new Date(match.matchDate), "HH:mm")}
+              {formatARTime(match.matchDate)}
             </span>
           )}
           {pointsBadge}

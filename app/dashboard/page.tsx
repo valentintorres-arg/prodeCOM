@@ -1,8 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { format, isToday, isTomorrow, addDays } from "date-fns";
-import { es } from "date-fns/locale";
 import MatchCard from "@/components/MatchCard";
+import { getARDateKey, formatARDayHeader } from "@/lib/dateUtils";
 import type { Match, Prediction } from "@/types";
 import { CalendarDays } from "lucide-react";
 import Link from "next/link";
@@ -11,24 +10,17 @@ export const dynamic = "force-dynamic";
 
 function groupByDate(matches: Match[]): Record<string, Match[]> {
   return matches.reduce((acc, m) => {
-    const d = m.matchDate.slice(0, 10);
+    const d = getARDateKey(m.matchDate);
     if (!acc[d]) acc[d] = [];
     acc[d].push(m);
     return acc;
   }, {} as Record<string, Match[]>);
 }
 
-function formatDateHeader(dateStr: string): string {
-  const date = new Date(dateStr + "T12:00:00");
-  if (isToday(date)) return "Hoy";
-  if (isTomorrow(date)) return "Mañana";
-  return format(date, "EEEE d 'de' MMMM", { locale: es });
-}
-
 export default async function DashboardPage() {
   const { user } = await getSessionUser();
 
-  const cutoff = addDays(new Date(), -1);
+  const cutoff = new Date(Date.now() - 86400 * 1000);
 
   const rawMatches = await prisma.match.findMany({
     where: { matchDate: { gte: cutoff } },
@@ -115,7 +107,7 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-blue-600/20 border border-blue-600/30 rounded-lg px-3 py-1">
                 <span className="text-blue-400 font-semibold capitalize text-sm">
-                  {formatDateHeader(date)}
+                  {formatARDayHeader(date)}
                 </span>
               </div>
               <div className="h-px flex-1 bg-white/10" />
