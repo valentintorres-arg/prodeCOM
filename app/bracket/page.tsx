@@ -76,22 +76,16 @@ export default async function BracketPage() {
         )}
       </div>
 
-      {totalMatches === 0 ? (
-        <div className="card text-center py-16">
-          <GitBranch className="w-12 h-12 text-white/20 mx-auto mb-3" />
-          <p className="text-white/50 font-medium">La eliminatoria aún no comenzó</p>
-          <p className="text-white/30 text-sm mt-1">
-            El admin irá cargando los partidos a medida que avance el torneo
-          </p>
-        </div>
-      ) : (
-        <div className="card p-4 sm:p-6">
-          <p className="text-white/30 text-xs mb-4 sm:hidden">
-            ← Deslizá para ver el cuadro completo
-          </p>
-          <BracketView matchesByStage={matchesByStage} thirdPlace={thirdPlace} />
+      {totalMatches === 0 && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 text-sm text-blue-300/70">
+          Los slots vacíos se completarán a medida que el admin cargue los partidos de la eliminatoria.
         </div>
       )}
+
+      <div className="card p-4 sm:p-6">
+        <p className="text-white/30 text-xs mb-4 sm:hidden">← Deslizá para ver el cuadro completo</p>
+        <BracketView matchesByStage={matchesByStage} thirdPlace={thirdPlace} />
+      </div>
     </div>
   );
 }

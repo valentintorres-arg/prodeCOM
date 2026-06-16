@@ -1,7 +1,7 @@
 // FIFA World Cup 2026 - Competition and Season IDs
 const FIFA_API = "https://api.fifa.com/api/v3";
 const COMPETITION_ID = "17";
-const SEASON_ID = "278166";
+const SEASON_ID = "285023"; // WC2026
 
 interface FIFAMatch {
   IdMatch: string;
