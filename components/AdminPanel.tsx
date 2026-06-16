@@ -29,7 +29,6 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
   const [createHomeScore, setCreateHomeScore] = useState(0);
   const [createAwayScore, setCreateAwayScore] = useState(0);
   const [creating, setCreating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"matches" | "add">("matches");
 
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
   const [editHome, setEditHome] = useState(0);

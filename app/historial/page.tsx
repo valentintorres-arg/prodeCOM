@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getSessionUser } from "@/lib/auth";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
 import { History } from "lucide-react";
 import type { Match, Team } from "@/types";
+
+type MatchRow = Prisma.MatchGetPayload<{ include: { homeTeam: true; awayTeam: true } }>;
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +21,8 @@ const STAGE_ORDER = [
   "Final",
 ];
 
-function serialize(m: Awaited<ReturnType<typeof prisma.match.findMany>>[0]): Match {
-  const team = (t: typeof m.homeTeam): Team => ({
+function serialize(m: MatchRow): Match {
+  const team = (t: MatchRow["homeTeam"]): Team => ({
     id: t.id, name: t.name, nameEs: t.nameEs,
     countryCode: t.countryCode, flagUrl: t.flagUrl, groupName: t.groupName,
   });
