@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Medal, Target } from "lucide-react";
+import { LayoutDashboard, Medal, Target, History, GitBranch } from "lucide-react";
 
 const tabs = [
   { href: "/dashboard", label: "Partidos", icon: LayoutDashboard },
   { href: "/leaderboard", label: "Tabla", icon: Medal },
   { href: "/mis-predicciones", label: "Mis pred.", icon: Target },
+  { href: "/historial", label: "Historial", icon: History },
+  { href: "/bracket", label: "Eliminat.", icon: GitBranch },
 ];
 
 export default function BottomNav() {

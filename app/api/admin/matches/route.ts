@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
   }
 
-  const { homeTeamId, awayTeamId, matchDate, stage, venue } = await req.json();
+  const { homeTeamId, awayTeamId, matchDate, stage, venue, homeScore, awayScore, alreadyPlayed } = await req.json();
 
   if (!homeTeamId || !awayTeamId || !matchDate) {
     return NextResponse.json({ error: "Faltan datos del partido" }, { status: 400 });
@@ -18,6 +18,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Los equipos deben ser distintos" }, { status: 400 });
   }
 
+  const isFinished = alreadyPlayed && typeof homeScore === "number" && typeof awayScore === "number";
+
   const match = await prisma.match.create({
     data: {
       homeTeamId,
@@ -25,6 +27,9 @@ export async function POST(req: NextRequest) {
       matchDate: new Date(matchDate),
       stage: stage || "Fase de Grupos",
       venue: venue || null,
+      status: isFinished ? "finished" : "upcoming",
+      homeScore: isFinished ? homeScore : null,
+      awayScore: isFinished ? awayScore : null,
     },
     include: {
       homeTeam: true,

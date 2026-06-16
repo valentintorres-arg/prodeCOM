@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { format } from "date-fns";
 import type { Match, Team } from "@/types";
-import { Plus, RefreshCw, Save, Trash2, AlertCircle } from "lucide-react";
+import { Plus, RefreshCw, Save, Trash2, AlertCircle, History, GitBranch } from "lucide-react";
 
 interface Props {
   matches: Match[];
@@ -24,7 +25,11 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
   const [matchDate, setMatchDate] = useState("");
   const [stage, setStage] = useState("Fase de Grupos");
   const [venue, setVenue] = useState("");
+  const [alreadyPlayed, setAlreadyPlayed] = useState(false);
+  const [createHomeScore, setCreateHomeScore] = useState(0);
+  const [createAwayScore, setCreateAwayScore] = useState(0);
   const [creating, setCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState<"matches" | "add">("matches");
 
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
   const [editHome, setEditHome] = useState(0);
@@ -48,7 +53,12 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
     const res = await fetch("/api/admin/matches", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ homeTeamId, awayTeamId, matchDate, stage, venue }),
+      body: JSON.stringify({
+        homeTeamId, awayTeamId, matchDate, stage, venue,
+        alreadyPlayed,
+        homeScore: alreadyPlayed ? createHomeScore : undefined,
+        awayScore: alreadyPlayed ? createAwayScore : undefined,
+      }),
     });
     if (res.ok) {
       const { match } = await res.json();
@@ -59,6 +69,7 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
       );
       setShowCreateForm(false);
       setHomeTeamId(""); setAwayTeamId(""); setMatchDate(""); setVenue("");
+      setAlreadyPlayed(false); setCreateHomeScore(0); setCreateAwayScore(0);
     }
     setCreating(false);
   }
@@ -92,13 +103,23 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
     if (res.ok) setMatches((prev) => prev.filter((m) => m.id !== matchId));
   }
 
-  const stages = ["Fase de Grupos", "Octavos de Final", "Cuartos de Final", "Semifinal", "Tercer Puesto", "Final"];
+  const stages = ["Fase de Grupos", "16avos de Final", "Octavos de Final", "Cuartos de Final", "Semifinal", "Tercer Puesto", "Final"];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Panel de Administración</h1>
-        <p className="text-white/50 text-sm mt-1">Gestioná partidos y resultados</p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Panel de Administración</h1>
+          <p className="text-white/50 text-sm mt-1">Gestioná partidos y resultados</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/historial" className="btn-ghost flex items-center gap-1.5 text-sm py-1.5">
+            <History className="w-4 h-4" />Historial
+          </Link>
+          <Link href="/bracket" className="btn-ghost flex items-center gap-1.5 text-sm py-1.5">
+            <GitBranch className="w-4 h-4" />Eliminatoria
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -107,7 +128,7 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
           {syncing ? "Sincronizando..." : "Sync desde FIFA"}
         </button>
         <button onClick={() => setShowCreateForm(!showCreateForm)} className="btn-primary flex items-center gap-2 text-sm">
-          <Plus className="w-4 h-4" />Agregar partido manual
+          <Plus className="w-4 h-4" />Agregar partido
         </button>
       </div>
 
@@ -179,6 +200,35 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
                 {stages.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+
+            {/* Historical match toggle */}
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <div
+                onClick={() => setAlreadyPlayed(!alreadyPlayed)}
+                className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${alreadyPlayed ? "bg-gold-400" : "bg-white/20"}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${alreadyPlayed ? "translate-x-5" : "translate-x-0.5"}`} />
+              </div>
+              <span className="text-sm text-white/70">Ya se jugó (cargar resultado)</span>
+            </label>
+
+            {alreadyPlayed && (
+              <div className="flex items-center gap-3 bg-navy-800 rounded-lg px-4 py-3">
+                <span className="text-sm text-white/60">Resultado:</span>
+                <input
+                  type="number" min="0" max="30" value={createHomeScore}
+                  onChange={(e) => setCreateHomeScore(Number(e.target.value))}
+                  className="w-14 text-center bg-navy-700 border border-white/20 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-blue-500"
+                />
+                <span className="text-white/30">-</span>
+                <input
+                  type="number" min="0" max="30" value={createAwayScore}
+                  onChange={(e) => setCreateAwayScore(Number(e.target.value))}
+                  className="w-14 text-center bg-navy-700 border border-white/20 rounded-lg py-1.5 text-white font-bold focus:outline-none focus:border-blue-500"
+                />
+                <span className="text-xs text-white/40">Se guardará como Finalizado</span>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-2">
               <button type="submit" disabled={creating} className="btn-primary text-sm flex-1">

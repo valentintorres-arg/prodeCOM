@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Trophy, LayoutDashboard, Medal, Target, LogOut, Settings } from "lucide-react";
+import { Trophy, LayoutDashboard, Medal, Target, LogOut, Settings, History, GitBranch } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface UserInfo {
@@ -38,7 +38,9 @@ export default function Navbar() {
   const navLinks = [
     { href: "/dashboard", label: "Partidos", icon: LayoutDashboard },
     { href: "/leaderboard", label: "Tabla", icon: Medal },
-    { href: "/mis-predicciones", label: "Mis pronósticos", icon: Target },
+    { href: "/mis-predicciones", label: "Mis pred.", icon: Target },
+    { href: "/historial", label: "Historial", icon: History },
+    { href: "/bracket", label: "Eliminatoria", icon: GitBranch },
   ];
 
   return (
