@@ -1,32 +1,29 @@
-import { createServerSupabase } from "@/lib/supabase/server";
-import { getSessionUser } from "@/lib/auth";
-import { format, parseISO } from "date-fns";
+import { requireAuth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Image from "next/image";
 import { Target } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function MisPrediccionesPage() {
-  const { user } = await getSessionUser();
-  const supabase = await createServerSupabase();
+  const { user } = await requireAuth();
 
-  const { data: predictions } = await supabase
-    .from("predictions")
-    .select(`
-      *,
-      match:matches(
-        *,
-        home_team:teams!matches_home_team_id_fkey(*),
-        away_team:teams!matches_away_team_id_fkey(*)
-      )
-    `)
-    .eq("user_id", user!.id)
-    .order("created_at", { ascending: false });
+  const rawPreds = await prisma.prediction.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      match: {
+        include: { homeTeam: true, awayTeam: true },
+      },
+    },
+  });
 
-  const totalPoints = (predictions || []).reduce((sum, p) => sum + p.points_earned, 0);
-  const exactResults = (predictions || []).filter((p) => p.points_earned === 3).length;
-  const correctOutcomes = (predictions || []).filter((p) => p.points_earned === 1).length;
+  const totalPoints = rawPreds.reduce((s, p) => s + p.pointsEarned, 0);
+  const exactResults = rawPreds.filter((p) => p.pointsEarned === 3).length;
+  const correctOutcomes = rawPreds.filter((p) => p.pointsEarned === 1).length;
 
   return (
     <div className="space-y-6">
@@ -38,14 +35,13 @@ export default async function MisPrediccionesPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="card text-center">
           <div className="text-3xl font-bold text-gold-400">{totalPoints}</div>
           <div className="text-xs text-white/50 mt-1">Puntos</div>
         </div>
         <div className="card text-center">
-          <div className="text-3xl font-bold text-white">{predictions?.length || 0}</div>
+          <div className="text-3xl font-bold text-white">{rawPreds.length}</div>
           <div className="text-xs text-white/50 mt-1">Predicciones</div>
         </div>
         <div className="card text-center">
@@ -58,123 +54,85 @@ export default async function MisPrediccionesPage() {
         </div>
       </div>
 
-      {/* Predictions list */}
       <div className="space-y-3">
-        {(predictions || []).map((pred) => {
+        {rawPreds.map((pred) => {
           const match = pred.match;
-          if (!match) return null;
-
           const isFinished = match.status === "finished";
-          const isPending = !isFinished;
+          const isLive = match.status === "live";
 
           let pointsBadge = null;
           if (isFinished) {
-            if (pred.points_earned === 3)
-              pointsBadge = <span className="score-badge-exact">+3 ⭐</span>;
-            else if (pred.points_earned === 1)
-              pointsBadge = <span className="score-badge-correct">+1</span>;
-            else
-              pointsBadge = <span className="score-badge-wrong">0</span>;
+            if (pred.pointsEarned === 3) pointsBadge = <span className="score-badge-exact">+3 ⭐</span>;
+            else if (pred.pointsEarned === 1) pointsBadge = <span className="score-badge-correct">+1</span>;
+            else pointsBadge = <span className="score-badge-wrong">0</span>;
           }
 
           return (
-            <div
-              key={pred.id}
-              className={`card flex items-center gap-4 ${
-                isFinished && pred.points_earned === 3 ? "border-gold-400/30" : ""
-              }`}
-            >
-              {/* Stage + date */}
+            <div key={pred.id} className={`card flex items-center gap-4 ${isFinished && pred.pointsEarned === 3 ? "border-gold-400/30" : ""}`}>
               <div className="hidden sm:block w-28 flex-shrink-0">
                 <div className="text-xs text-white/40">{match.stage}</div>
                 <div className="text-xs text-white/60 mt-0.5">
-                  {format(parseISO(match.match_date), "d MMM HH:mm", { locale: es })}
+                  {format(match.matchDate, "d MMM HH:mm", { locale: es })}
                 </div>
               </div>
 
-              {/* Teams + result */}
               <div className="flex-1 flex items-center justify-center gap-3">
-                {/* Home team */}
                 <div className="flex items-center gap-2 flex-1 justify-end">
-                  <span className="text-white font-medium text-sm text-right">
-                    {match.home_team?.name_es}
-                  </span>
+                  <span className="text-white font-medium text-sm text-right">{match.homeTeam.nameEs}</span>
                   <Image
-                    src={match.home_team?.flag_url || `https://flagcdn.com/w40/${match.home_team?.country_code}.png`}
-                    alt={match.home_team?.name_es || ""}
-                    width={28}
-                    height={20}
-                    className="rounded"
+                    src={match.homeTeam.flagUrl || `https://flagcdn.com/w40/${match.homeTeam.countryCode}.png`}
+                    alt={match.homeTeam.nameEs} width={28} height={20} className="rounded"
                   />
                 </div>
 
-                {/* Scores */}
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {/* Actual score */}
                   {isFinished ? (
                     <div className="text-center">
                       <div className="text-white/40 text-[10px] mb-0.5">Real</div>
                       <div className="font-bold text-white bg-white/10 rounded px-2 py-0.5 text-sm">
-                        {match.home_score} - {match.away_score}
+                        {match.homeScore} - {match.awayScore}
                       </div>
                     </div>
                   ) : (
                     <div className="text-white/30 text-sm px-2">vs</div>
                   )}
-
                   <div className="text-white/30 mx-1">|</div>
-
-                  {/* Prediction */}
                   <div className="text-center">
                     <div className="text-white/40 text-[10px] mb-0.5">Tuyo</div>
                     <div className={`font-bold rounded px-2 py-0.5 text-sm ${
-                      isPending
-                        ? "text-white/80 bg-white/10"
-                        : pred.points_earned === 3
-                        ? "text-gold-400 bg-gold-400/10"
-                        : pred.points_earned === 1
-                        ? "text-blue-400 bg-blue-400/10"
-                        : "text-red-400 bg-red-400/10"
+                      !isFinished ? "text-white/80 bg-white/10" :
+                      pred.pointsEarned === 3 ? "text-gold-400 bg-gold-400/10" :
+                      pred.pointsEarned === 1 ? "text-blue-400 bg-blue-400/10" :
+                      "text-red-400 bg-red-400/10"
                     }`}>
-                      {pred.predicted_home} - {pred.predicted_away}
+                      {pred.predictedHome} - {pred.predictedAway}
                     </div>
                   </div>
                 </div>
 
-                {/* Away team */}
                 <div className="flex items-center gap-2 flex-1">
                   <Image
-                    src={match.away_team?.flag_url || `https://flagcdn.com/w40/${match.away_team?.country_code}.png`}
-                    alt={match.away_team?.name_es || ""}
-                    width={28}
-                    height={20}
-                    className="rounded"
+                    src={match.awayTeam.flagUrl || `https://flagcdn.com/w40/${match.awayTeam.countryCode}.png`}
+                    alt={match.awayTeam.nameEs} width={28} height={20} className="rounded"
                   />
-                  <span className="text-white font-medium text-sm">
-                    {match.away_team?.name_es}
-                  </span>
+                  <span className="text-white font-medium text-sm">{match.awayTeam.nameEs}</span>
                 </div>
               </div>
 
-              {/* Points badge */}
               <div className="w-12 text-right flex-shrink-0">
                 {pointsBadge || (
-                  <span className="text-xs text-white/30">
-                    {match.status === "live" ? "🔴 EN VIVO" : "Pend."}
-                  </span>
+                  <span className="text-xs text-white/30">{isLive ? "🔴 VIVO" : "Pend."}</span>
                 )}
               </div>
             </div>
           );
         })}
 
-        {(!predictions || predictions.length === 0) && (
+        {rawPreds.length === 0 && (
           <div className="card text-center py-12">
             <Target className="w-12 h-12 text-white/20 mx-auto mb-3" />
             <p className="text-white/50">Todavía no hiciste ningún pronóstico</p>
-            <a href="/dashboard" className="btn-primary mt-4 inline-block text-sm">
-              Ver partidos
-            </a>
+            <Link href="/dashboard" className="btn-primary mt-4 inline-block text-sm">Ver partidos</Link>
           </div>
         )}
       </div>

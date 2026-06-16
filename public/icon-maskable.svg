@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable icon: content inside inner 80% safe zone (204px margin = ~40px each side) -->
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d1b3e"/>
+      <stop offset="100%" stop-color="#060b1a"/>
+    </linearGradient>
+    <radialGradient id="ballShine2" cx="38%" cy="32%" r="55%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#f0f0f0"/>
+      <stop offset="100%" stop-color="#d8d8d8"/>
+    </radialGradient>
+    <clipPath id="ballClip2">
+      <circle cx="256" cy="210" r="120"/>
+    </clipPath>
+  </defs>
+
+  <!-- Full background (maskable icons need edge-to-edge background) -->
+  <rect width="512" height="512" fill="url(#bg2)"/>
+
+  <!-- Ball shadow -->
+  <ellipse cx="256" cy="338" rx="88" ry="11" fill="#000" opacity="0.3"/>
+
+  <!-- Ball (scaled down to fit safe zone) -->
+  <circle cx="256" cy="210" r="120" fill="url(#ballShine2)"/>
+
+  <g clip-path="url(#ballClip2)" fill="#0f172a" opacity="0.88">
+    <polygon points="256,120 296,147 280,196 232,196 216,147"/>
+    <polygon points="338,170 374,196 362,244 316,248 302,198 330,168"/>
+    <polygon points="364,276 382,318 348,350 310,334 306,280 338,258"/>
+    <polygon points="256,322 286,336 288,376 256,392 224,376 226,336"/>
+    <polygon points="148,276 174,258 206,280 202,334 164,350 130,318"/>
+    <polygon points="174,168 202,168 230,198 216,248 170,244 158,196"/>
+    <polygon points="256,92 280,100 290,122 256,130 222,122 232,100"/>
+  </g>
+
+  <ellipse cx="225" cy="175" rx="34" ry="22" fill="white" opacity="0.18" transform="rotate(-25 225 175)"/>
+
+  <!-- Text inside safe zone -->
+  <text x="256" y="386"
+    text-anchor="middle"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="700"
+    font-size="24"
+    fill="#ffd700"
+    opacity="0.75"
+    letter-spacing="8">PRODE</text>
+
+  <text x="256" y="438"
+    text-anchor="middle"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="900"
+    font-size="68"
+    fill="#ffd700"
+    letter-spacing="5">COM</text>
+</svg>

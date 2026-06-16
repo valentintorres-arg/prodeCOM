@@ -1,28 +1,47 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import AdminPanel from "@/components/AdminPanel";
+import type { Match, Team } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const { profile } = await getSessionUser();
-  if (!profile?.is_admin) redirect("/dashboard");
+  const { user } = await getSessionUser();
+  if (!user?.isAdmin) redirect("/dashboard");
 
-  const supabase = await createServerSupabase();
-
-  const [{ data: matches }, { data: teams }] = await Promise.all([
-    supabase
-      .from("matches")
-      .select(`
-        *,
-        home_team:teams!matches_home_team_id_fkey(*),
-        away_team:teams!matches_away_team_id_fkey(*)
-      `)
-      .order("match_date", { ascending: true })
-      .limit(200),
-    supabase.from("teams").select("*").order("group_name").order("name"),
+  const [rawMatches, rawTeams] = await Promise.all([
+    prisma.match.findMany({
+      orderBy: { matchDate: "asc" },
+      take: 200,
+      include: { homeTeam: true, awayTeam: true },
+    }),
+    prisma.team.findMany({ orderBy: [{ groupName: "asc" }, { name: "asc" }] }),
   ]);
 
-  return <AdminPanel matches={matches || []} teams={teams || []} />;
+  const matches: Match[] = rawMatches.map((m) => ({
+    id: m.id,
+    homeTeamId: m.homeTeamId,
+    awayTeamId: m.awayTeamId,
+    matchDate: m.matchDate.toISOString(),
+    stage: m.stage,
+    venue: m.venue,
+    status: m.status as Match["status"],
+    homeScore: m.homeScore,
+    awayScore: m.awayScore,
+    fifaMatchId: m.fifaMatchId,
+    homeTeam: { id: m.homeTeam.id, name: m.homeTeam.name, nameEs: m.homeTeam.nameEs, countryCode: m.homeTeam.countryCode, flagUrl: m.homeTeam.flagUrl, groupName: m.homeTeam.groupName },
+    awayTeam: { id: m.awayTeam.id, name: m.awayTeam.name, nameEs: m.awayTeam.nameEs, countryCode: m.awayTeam.countryCode, flagUrl: m.awayTeam.flagUrl, groupName: m.awayTeam.groupName },
+  }));
+
+  const teams: Team[] = rawTeams.map((t) => ({
+    id: t.id,
+    name: t.name,
+    nameEs: t.nameEs,
+    countryCode: t.countryCode,
+    flagUrl: t.flagUrl,
+    groupName: t.groupName,
+  }));
+
+  return <AdminPanel matches={matches} teams={teams} />;
 }

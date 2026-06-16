@@ -7,12 +7,38 @@
   --bg-card: #0e1a35;
   --accent-gold: #ffd700;
   --accent-blue: #1e88e5;
+  /* Safe area insets for notch / home indicator */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 body {
   background-color: var(--bg-primary);
   color: #f8fafc;
   font-family: system-ui, -apple-system, sans-serif;
+  /* Prevent overscroll bounce on iOS */
+  overscroll-behavior: none;
+  /* Better text rendering on mobile */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent font size inflation on orientation change (iOS) */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Inputs: prevent iOS auto-zoom (font-size >= 16px) */
+input, select, textarea {
+  font-size: max(16px, 1rem);
 }
 
 @layer components {

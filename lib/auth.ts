@@ -1,35 +1,35 @@
-import { createServerSupabase } from "./supabase/server";
-import type { Profile } from "@/types";
+import { getSession } from "./session-server";
+import { prisma } from "./prisma";
 
-export async function getSessionUser(): Promise<{
-  user: { id: string; email: string } | null;
-  profile: Profile | null;
-}> {
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+const userSelect = {
+  id: true,
+  username: true,
+  email: true,
+  avatarUrl: true,
+  totalPoints: true,
+  isAdmin: true,
+} as const;
 
-  if (error || !user) return { user: null, profile: null };
+export async function getSessionUser() {
+  const session = await getSession();
+  if (!session) return { session: null, user: null };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const user = await prisma.user.findUnique({
+    where: { id: session.sub },
+    select: userSelect,
+  });
 
-  return { user: { id: user.id, email: user.email! }, profile };
+  return { session, user };
 }
 
 export async function requireAuth() {
-  const { user, profile } = await getSessionUser();
-  if (!user) throw new Error("No autenticado");
-  return { user, profile };
+  const { session, user } = await getSessionUser();
+  if (!session || !user) throw new Error("No autenticado");
+  return { session, user };
 }
 
 export async function requireAdmin() {
-  const { user, profile } = await getSessionUser();
-  if (!user || !profile?.is_admin) throw new Error("Sin permisos de administrador");
-  return { user, profile };
+  const { session, user } = await getSessionUser();
+  if (!session || !user || !user.isAdmin) throw new Error("Sin permisos de administrador");
+  return { session, user };
 }

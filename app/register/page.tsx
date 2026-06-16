@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 import { Trophy, Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
@@ -20,43 +19,15 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
-    // Validate username
-    const cleanUsername = username.trim().toLowerCase().replace(/\s+/g, "_");
-    if (!/^[a-z0-9_]{3,20}$/.test(cleanUsername)) {
-      setError("El usuario debe tener 3-20 caracteres (letras, números o _)");
-      setLoading(false);
-      return;
-    }
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
-      setLoading(false);
-      return;
-    }
-
-    // Check if username is taken
-    const supabase = createClient();
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", cleanUsername)
-      .single();
-
-    if (existing) {
-      setError("Ese nombre de usuario ya está en uso");
-      setLoading(false);
-      return;
-    }
-
-    const { error: authError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { data: { username: cleanUsername } },
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username.trim(), email: email.trim(), password }),
     });
 
-    if (authError) {
-      setError(authError.message === "User already registered"
-        ? "Ya existe una cuenta con ese email"
-        : authError.message);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || "Error al registrarse");
       setLoading(false);
       return;
     }
@@ -81,9 +52,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="block text-sm text-white/70 mb-1.5">
-                Nombre de usuario
-              </label>
+              <label className="block text-sm text-white/70 mb-1.5">Nombre de usuario</label>
               <input
                 type="text"
                 value={username}
@@ -93,9 +62,7 @@ export default function RegisterPage() {
                 required
                 autoComplete="username"
               />
-              <p className="text-xs text-white/30 mt-1">
-                3-20 caracteres, solo letras, números y _
-              </p>
+              <p className="text-xs text-white/30 mt-1">3-20 caracteres (letras, números y _)</p>
             </div>
 
             <div>
@@ -112,9 +79,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-white/70 mb-1.5">
-                Contraseña
-              </label>
+              <label className="block text-sm text-white/70 mb-1.5">Contraseña</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -125,20 +90,15 @@ export default function RegisterPage() {
                   required
                   autoComplete="new-password"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70"
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">
-                {error}
-              </div>
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">{error}</div>
             )}
 
             <button type="submit" disabled={loading} className="btn-gold w-full mt-2">
@@ -148,9 +108,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-white/50 text-sm mt-6">
             ¿Ya tenés cuenta?{" "}
-            <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">
-              Iniciar sesión
-            </Link>
+            <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">Iniciar sesión</Link>
           </p>
         </div>
       </div>

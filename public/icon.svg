@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d1b3e"/>
+      <stop offset="100%" stop-color="#060b1a"/>
+    </linearGradient>
+    <radialGradient id="ballShine" cx="38%" cy="32%" r="55%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#f0f0f0"/>
+      <stop offset="100%" stop-color="#d8d8d8"/>
+    </radialGradient>
+    <clipPath id="ballClip">
+      <circle cx="256" cy="208" r="148"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Ball shadow -->
+  <ellipse cx="256" cy="364" rx="108" ry="14" fill="#000" opacity="0.35"/>
+
+  <!-- Ball body -->
+  <circle cx="256" cy="208" r="148" fill="url(#ballShine)"/>
+
+  <!-- Soccer patches (clipped to ball) -->
+  <g clip-path="url(#ballClip)" fill="#0f172a" opacity="0.88">
+    <!-- Center pentagon -->
+    <polygon points="256,110 304,142 286,196 226,196 208,142"/>
+    <!-- Top right -->
+    <polygon points="354,162 400,194 386,250 330,254 314,198 344,160"/>
+    <!-- Right -->
+    <polygon points="388,282 410,334 368,372 320,354 316,294 354,268"/>
+    <!-- Bottom -->
+    <polygon points="256,342 294,358 296,406 256,424 216,406 218,358"/>
+    <!-- Left -->
+    <polygon points="124,282 158,268 196,294 192,354 144,372 102,334"/>
+    <!-- Top left -->
+    <polygon points="158,162 168,198 152,254 96,250 82,194 128,162"/>
+    <!-- Top center edge -->
+    <polygon points="256,62 288,70 300,100 256,110 212,100 224,70"/>
+  </g>
+
+  <!-- Ball shine highlight -->
+  <ellipse cx="215" cy="168" rx="42" ry="28" fill="white" opacity="0.18" transform="rotate(-25 215 168)"/>
+
+  <!-- "PRODE" small text -->
+  <text x="256" y="404"
+    text-anchor="middle"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="700"
+    font-size="30"
+    fill="#ffd700"
+    opacity="0.75"
+    letter-spacing="10">PRODE</text>
+
+  <!-- "COM" big gold text -->
+  <text x="256" y="460"
+    text-anchor="middle"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="900"
+    font-size="82"
+    fill="#ffd700"
+    letter-spacing="6">COM</text>
+</svg>

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
-import { parseISO, isBefore } from "date-fns";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session-server";
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const { matchId, predictedHome, predictedAway } = await req.json();
 
@@ -18,34 +17,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Pronóstico inválido" }, { status: 400 });
   }
 
-  // Verify the match exists and hasn't started
-  const { data: match } = await supabase
-    .from("matches")
-    .select("id, match_date, status")
-    .eq("id", matchId)
-    .single();
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: { id: true, matchDate: true, status: true },
+  });
 
   if (!match) return NextResponse.json({ error: "Partido no encontrado" }, { status: 404 });
 
-  if (match.status !== "upcoming" || !isBefore(new Date(), parseISO(match.match_date))) {
+  if (match.status !== "upcoming" || match.matchDate <= new Date()) {
     return NextResponse.json({ error: "El partido ya empezó, no podés modificar tu pronóstico" }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("predictions")
-    .upsert(
-      {
-        user_id: user.id,
-        match_id: matchId,
-        predicted_home: predictedHome,
-        predicted_away: predictedAway,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,match_id" }
-    )
-    .select()
-    .single();
+  const prediction = await prisma.prediction.upsert({
+    where: { userId_matchId: { userId: session.sub, matchId } },
+    create: { userId: session.sub, matchId, predictedHome, predictedAway },
+    update: { predictedHome, predictedAway },
+  });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ prediction: data });
+  return NextResponse.json({ prediction });
 }

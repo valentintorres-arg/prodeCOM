@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminSupabase } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { fetchFIFAMatches } from "@/lib/fifa";
 import { requireAdmin } from "@/lib/auth";
 
@@ -18,16 +18,12 @@ export async function POST() {
     );
   }
 
-  const supabase = await createAdminSupabase();
-
-  // Get all teams to map names to IDs
-  const { data: teams } = await supabase.from("teams").select("*");
-  const teamsByName = (teams || []).reduce((acc, t) => {
-    acc[t.name.toLowerCase()] = t;
-    acc[t.name_es.toLowerCase()] = t;
-    return acc;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }, {} as Record<string, any>);
+  const teams = await prisma.team.findMany({ select: { id: true, name: true, nameEs: true } });
+  const teamsByName: Record<string, string> = {};
+  for (const t of teams) {
+    teamsByName[t.name.toLowerCase()] = t.id;
+    teamsByName[t.nameEs.toLowerCase()] = t.id;
+  }
 
   let synced = 0;
   let skipped = 0;
@@ -35,33 +31,32 @@ export async function POST() {
   for (const fm of fifaMatches) {
     if (!fm.home_team_name || !fm.away_team_name) { skipped++; continue; }
 
-    const homeTeam = teamsByName[fm.home_team_name.toLowerCase()];
-    const awayTeam = teamsByName[fm.away_team_name.toLowerCase()];
+    const homeTeamId = teamsByName[fm.home_team_name.toLowerCase()];
+    const awayTeamId = teamsByName[fm.away_team_name.toLowerCase()];
+    if (!homeTeamId || !awayTeamId) { skipped++; continue; }
 
-    if (!homeTeam || !awayTeam) { skipped++; continue; }
-
-    await supabase
-      .from("matches")
-      .upsert(
-        {
-          fifa_match_id: fm.fifa_match_id,
-          home_team_id: homeTeam.id,
-          away_team_id: awayTeam.id,
-          match_date: fm.match_date,
-          stage: fm.stage || "Fase de Grupos",
-          venue: fm.venue,
-          status: fm.status,
-          home_score: fm.home_score,
-          away_score: fm.away_score,
-        },
-        { onConflict: "fifa_match_id" }
-      );
+    await prisma.match.upsert({
+      where: { fifaMatchId: fm.fifa_match_id },
+      update: {
+        homeScore: fm.home_score,
+        awayScore: fm.away_score,
+        status: fm.status,
+        matchDate: new Date(fm.match_date),
+      },
+      create: {
+        fifaMatchId: fm.fifa_match_id,
+        homeTeamId,
+        awayTeamId,
+        matchDate: new Date(fm.match_date),
+        stage: fm.stage || "Fase de Grupos",
+        venue: fm.venue || null,
+        status: fm.status,
+        homeScore: fm.home_score,
+        awayScore: fm.away_score,
+      },
+    });
     synced++;
   }
 
-  return NextResponse.json({
-    message: `Sincronización completada: ${synced} partidos actualizados, ${skipped} omitidos`,
-    synced,
-    skipped,
-  });
+  return NextResponse.json({ message: `${synced} partidos actualizados, ${skipped} omitidos`, synced, skipped });
 }

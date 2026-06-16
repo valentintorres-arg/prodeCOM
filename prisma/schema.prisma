@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ──────────────────────────────────────────────
+// USUARIOS
+// ──────────────────────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  avatarUrl    String?  @map("avatar_url")
+  totalPoints  Int      @default(0) @map("total_points")
+  isAdmin      Boolean  @default(false) @map("is_admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  predictions Prediction[]
+
+  @@index([username])
+  @@index([totalPoints(sort: Desc)])
+  @@map("users")
+}
+
+// ──────────────────────────────────────────────
+// EQUIPOS
+// ──────────────────────────────────────────────
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  nameEs      String   @map("name_es")
+  countryCode String   @unique @map("country_code")
+  flagUrl     String?  @map("flag_url")
+  groupName   String?  @map("group_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+
+  @@index([groupName])
+  @@map("teams")
+}
+
+// ──────────────────────────────────────────────
+// PARTIDOS
+// ──────────────────────────────────────────────
+enum MatchStatus {
+  upcoming
+  live
+  finished
+}
+
+model Match {
+  id          String      @id @default(cuid())
+  homeTeamId  String      @map("home_team_id")
+  awayTeamId  String      @map("away_team_id")
+  matchDate   DateTime    @map("match_date")
+  stage       String      @default("Fase de Grupos")
+  venue       String?
+  status      MatchStatus @default(upcoming)
+  homeScore   Int?        @map("home_score")
+  awayScore   Int?        @map("away_score")
+  fifaMatchId String?     @unique @map("fifa_match_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  homeTeam    Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  predictions Prediction[]
+
+  @@index([matchDate])
+  @@index([status])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@map("matches")
+}
+
+// ──────────────────────────────────────────────
+// PREDICCIONES
+// ──────────────────────────────────────────────
+model Prediction {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  matchId       String   @map("match_id")
+  predictedHome Int      @map("predicted_home")
+  predictedAway Int      @map("predicted_away")
+  pointsEarned  Int      @default(0) @map("points_earned")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId])
+  @@index([userId])
+  @@index([matchId])
+  @@map("predictions")
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminSupabase } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -9,35 +9,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const { homeTeamId, awayTeamId, matchDate, stage, venue } = body;
+  const { homeTeamId, awayTeamId, matchDate, stage, venue } = await req.json();
 
   if (!homeTeamId || !awayTeamId || !matchDate) {
     return NextResponse.json({ error: "Faltan datos del partido" }, { status: 400 });
   }
-
   if (homeTeamId === awayTeamId) {
     return NextResponse.json({ error: "Los equipos deben ser distintos" }, { status: 400 });
   }
 
-  const supabase = await createAdminSupabase();
-  const { data, error } = await supabase
-    .from("matches")
-    .insert({
-      home_team_id: homeTeamId,
-      away_team_id: awayTeamId,
-      match_date: matchDate,
+  const match = await prisma.match.create({
+    data: {
+      homeTeamId,
+      awayTeamId,
+      matchDate: new Date(matchDate),
       stage: stage || "Fase de Grupos",
       venue: venue || null,
-      status: "upcoming",
-    })
-    .select(`
-      *,
-      home_team:teams!matches_home_team_id_fkey(*),
-      away_team:teams!matches_away_team_id_fkey(*)
-    `)
-    .single();
+    },
+    include: {
+      homeTeam: true,
+      awayTeam: true,
+    },
+  });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ match: data });
+  return NextResponse.json({ match });
 }

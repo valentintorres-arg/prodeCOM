@@ -25,7 +25,18 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Safe-area padding utilities (pb-safe, pt-safe, etc.)
+    function ({ addUtilities }: { addUtilities: (u: Record<string, Record<string, string>>) => void }) {
+      addUtilities({
+        ".pb-safe": { paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" },
+        ".pt-safe": { paddingTop: "env(safe-area-inset-top, 0px)" },
+        ".pl-safe": { paddingLeft: "env(safe-area-inset-left, 0px)" },
+        ".pr-safe": { paddingRight: "env(safe-area-inset-right, 0px)" },
+        ".mb-safe": { marginBottom: "env(safe-area-inset-bottom, 0px)" },
+      });
+    },
+  ],
 };
 
 export default config;
