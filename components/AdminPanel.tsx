@@ -41,7 +41,10 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
     setSyncMsg("");
     const res = await fetch("/api/matches/sync", { method: "POST" });
     const data = await res.json();
-    setSyncMsg(res.ok ? data.message : `Error: ${data.error}`);
+    let msg = res.ok ? data.message : `Error: ${data.error}`;
+    if (data.afFailReason) msg += `\napi-football: ${data.afFailReason}`;
+    if (data.debugSkipped?.length) msg += `\nEquipos no encontrados: ${data.debugSkipped.slice(0, 5).join(" | ")}`;
+    setSyncMsg(msg);
     setSyncing(false);
     if (res.ok) router.refresh();
   }
@@ -94,6 +97,7 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
         prev.map((m) => m.id === matchId ? { ...m, homeScore: editHome, awayScore: editAway, status: editStatus } : m)
       );
       setEditingMatch(null);
+      router.refresh();
     }
     setSaving(false);
   }
@@ -126,7 +130,7 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
       <div className="flex flex-wrap gap-3">
         <button onClick={handleSync} disabled={syncing} className="btn-ghost flex items-center gap-2 text-sm">
           <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Sincronizando..." : "Sync desde FIFA"}
+          {syncing ? "Sincronizando..." : "Sync resultados"}
         </button>
         <button onClick={() => setShowCreateForm(!showCreateForm)} className="btn-primary flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" />Agregar partido
@@ -137,7 +141,8 @@ export default function AdminPanel({ matches: initialMatches, teams }: Props) {
         <div className={`flex items-start gap-2 rounded-lg px-4 py-3 text-sm ${
           syncMsg.startsWith("Error") ? "bg-red-500/10 border border-red-500/30 text-red-400" : "bg-green-500/10 border border-green-500/30 text-green-400"
         }`}>
-          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />{syncMsg}
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span className="whitespace-pre-line">{syncMsg}</span>
         </div>
       )}
 

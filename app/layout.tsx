@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import PwaRegister from "@/components/PwaRegister";
+import AutoRefresh from "@/components/AutoRefresh";
 
 export const viewport: Viewport = {
   themeColor: "#060b1a",
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body className="min-h-screen bg-world-cup">
         <PwaRegister />
+        <AutoRefresh />
         <Navbar />
         <main className="max-w-6xl mx-auto px-4 py-6 pb-20 sm:pb-6">{children}</main>
         <BottomNav />

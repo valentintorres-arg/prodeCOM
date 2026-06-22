@@ -1,16 +1,11 @@
-const CACHE = "prode-com-v1";
+const CACHE = "prode-com-v2";
 
 const PRECACHE = [
-  "/",
-  "/dashboard",
-  "/leaderboard",
-  "/login",
-  "/register",
   "/icon.svg",
   "/icon-maskable.svg",
 ];
 
-// Install: pre-cache shell pages
+// Install: pre-cache only static assets (not pages — they have live data)
 self.addEventListener("install", (e) => {
   e.waitUntil(
     caches.open(CACHE).then((c) =>
@@ -60,18 +55,15 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Pages: stale-while-revalidate
+  // Pages: network-first (always fetch fresh — data changes after every match)
   e.respondWith(
-    caches.open(CACHE).then((cache) =>
-      cache.match(request).then((cached) => {
-        const fetchPromise = fetch(request)
-          .then((res) => {
-            if (res.ok) cache.put(request, res.clone());
-            return res;
-          })
-          .catch(() => cached);
-        return cached || fetchPromise;
+    fetch(request)
+      .then((res) => {
+        if (res.ok) {
+          caches.open(CACHE).then((c) => c.put(request, res.clone()));
+        }
+        return res;
       })
-    )
+      .catch(() => caches.match(request))
   );
 });

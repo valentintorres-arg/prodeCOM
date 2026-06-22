@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
@@ -69,6 +70,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return updated;
   });
 
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+  revalidatePath("/historial");
+  revalidatePath("/mis-predicciones");
   return NextResponse.json({ match });
 }
 

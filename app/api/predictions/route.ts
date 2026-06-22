@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session-server";
 
@@ -34,5 +35,7 @@ export async function POST(req: NextRequest) {
     update: { predictedHome, predictedAway },
   });
 
+  revalidatePath("/dashboard");
+  revalidatePath("/mis-predicciones");
   return NextResponse.json({ prediction });
 }
