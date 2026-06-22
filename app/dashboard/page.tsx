@@ -20,10 +20,14 @@ function groupByDate(matches: Match[]): Record<string, Match[]> {
 export default async function DashboardPage() {
   const { user } = await getSessionUser();
 
-  const cutoff = new Date(Date.now() - 86400 * 1000);
+  // Start of today in Argentina time (UTC-3)
+  const todayAR = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+  }).format(new Date());
+  const startOfToday = new Date(`${todayAR}T00:00:00-03:00`);
 
   const rawMatches = await prisma.match.findMany({
-    where: { matchDate: { gte: cutoff } },
+    where: { matchDate: { gte: startOfToday } },
     orderBy: { matchDate: "asc" },
     take: 60,
     include: { homeTeam: true, awayTeam: true },
